@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Cycle Diagnostic Tool 🩺</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; padding-bottom: 50px; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Card Styling */
+        .card { background-color: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; position: relative; overflow: hidden; transition: all 0.2s; }
+        .card:hover { border-color: #475569; }
+
+        /* Diagnostic Buttons */
+        .diag-btn {
+            width: 100%; padding: 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+            border: 2px solid #334155; background: #0f172a; color: #94a3b8; transition: all 0.2s;
+            text-align: center; cursor: pointer; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; px-4;
+        }
+        .diag-btn:hover { background: #1e293b; border-color: #475569; }
+        
+        /* Active States for Buttons */
+        .diag-btn.active-buy { background: #172554; border-color: #3b82f6; color: #60a5fa; } /* Blue for Buy signal */
+        .diag-btn.active-sell { background: #450a0a; border-color: #ef4444; color: #fca5a5; } /* Red for Sell signal */
+
+        /* Status Output Area */
+        .status-output { background: #020617; border-left: 4px solid #64748b; }
+        .status-output.phase-btc { border-color: #f59e0b; }
+        .status-output.phase-alt { border-color: #22c55e; box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        .status-output.phase-acc { border-color: #3b82f6; }
+
+        /* Gauge Frame */
+        .gauge-frame { height: 280px; margin-top: 5px; }
+
+        /* Crypto Bubbles Fix */
+        .bubble-wrapper { position: relative; height: 600px; width: 100%; background: #000; }
+        .bubble-iframe { width: 100%; height: 100%; border: none; position: relative; z-index: 1; }
+        
+        /* Launch Button */
+        .launch-btn {
+            pointer-events: auto;
+            background: #3b82f6; color: white; padding: 8px 16px; border-radius: 6px;
+            font-weight: bold; text-decoration: none; transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5); font-size: 0.8rem;
+        }
+        .launch-btn:hover { transform: scale(1.05); background: #2563eb; }
+    </style>
+</head>
+<body class="max-w-[1600px] mx-auto p-4">
+
+    <!-- HEADER -->
+    <header class="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-slate-800 pb-6">
+        <div>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight">Market Diagnostic <span class="text-blue-500">Terminal</span></h1>
+            <p class="text-slate-400 text-sm mt-1">Match the buttons to the gauges to see the real market phase.</p>
+        </div>
+        <div class="flex gap-2 mt-4 md:mt-0">
+            <button onclick="resetDiagnostic()" class="text-xs text-slate-500 hover:text-white underline">Reset All</button>
+        </div>
+    </header>
+
+    <!-- MAIN GRID: DIAGNOSTIC TOOLS -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
+        
+        <!-- MODULE 1: BTC DOMINANCE -->
+        <div class="card border-t-4 border-orange-500">
+            <div class="flex justify-between items-start">
+                <h3 class="font-bold text-white">1. BTC Dominance</h3>
+                <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">DRIVER</span>
+            </div>
+            <!-- Gauge -->
+            <div class="gauge-frame">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+                    { "interval": "1D", "width": "100%", "isTransparent": true, "height": "100%", "symbol": "CRYPTOCAP:BTC.D", "showIntervalTabs": false, "displayMode": "single", "locale": "en", "colorTheme": "dark" }
+                    </script>
+                </div>
+            </div>
+            <!-- Buttons -->
+            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center">WHERE IS THE NEEDLE?</p>
+            <div class="flex flex-col">
+                <button class="diag-btn" id="btn-btc-sell" onclick="setSignal('btc', 'bear')">
+                    <span>Gauge says <strong>SELL</strong></span>
+                    <span class="text-xs text-slate-500">📉</span>
+                </button>
+                <button class="diag-btn" id="btn-btc-buy" onclick="setSignal('btc', 'bull')">
+                    <span>Gauge says <strong>BUY</strong></span>
+                    <span class="text-xs text-slate-500">📈</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODULE 2: MONEY FLOW -->
+        <div class="card border-t-4 border-green-500">
+            <div class="flex justify-between items-start">
+                <h3 class="font-bold text-white">2. Altcoin Money</h3>
+                <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">VOLUME</span>
+            </div>
+            <!-- Gauge -->
+            <div class="gauge-frame">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+                    { "interval": "1D", "width": "100%", "isTransparent": true, "height": "100%", "symbol": "CRYPTOCAP:TOTAL2", "showIntervalTabs": false, "displayMode": "single", "locale": "en", "colorTheme": "dark" }
+                    </script>
+                </div>
+            </div>
+            <!-- Buttons -->
+            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center">WHERE IS THE NEEDLE?</p>
+            <div class="flex flex-col">
+                <button class="diag-btn" id="btn-money-sell" onclick="setSignal('money', 'bear')">
+                    <span>Gauge says <strong>SELL</strong></span>
+                    <span class="text-xs text-slate-500">📉</span>
+                </button>
+                <button class="diag-btn" id="btn-money-buy" onclick="setSignal('money', 'bull')">
+                    <span>Gauge says <strong>BUY</strong></span>
+                    <span class="text-xs text-slate-500">📈</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODULE 3: ROTATION -->
+        <div class="card border-t-4 border-purple-500">
+            <div class="flex justify-between items-start">
+                <h3 class="font-bold text-white">3. ETH Strength</h3>
+                <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">ROTATION</span>
+            </div>
+            <!-- Gauge -->
+            <div class="gauge-frame">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+                    { "interval": "1D", "width": "100%", "isTransparent": true, "height": "100%", "symbol": "BINANCE:ETHBTC", "showIntervalTabs": false, "displayMode": "single", "locale": "en", "colorTheme": "dark" }
+                    </script>
+                </div>
+            </div>
+            <!-- Buttons -->
+            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center">WHERE IS THE NEEDLE?</p>
+            <div class="flex flex-col">
+                <button class="diag-btn" id="btn-eth-sell" onclick="setSignal('eth', 'bear')">
+                    <span>Gauge says <strong>SELL</strong></span>
+                    <span class="text-xs text-slate-500">📉</span>
+                </button>
+                <button class="diag-btn" id="btn-eth-buy" onclick="setSignal('eth', 'bull')">
+                    <span>Gauge says <strong>BUY</strong></span>
+                    <span class="text-xs text-slate-500">📈</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODULE 4: THE RESULT (CALCULATOR) -->
+        <div class="card status-output flex flex-col justify-center p-6" id="result-card">
+            <h2 class="text-slate-500 text-xs uppercase tracking-widest mb-2">DIAGNOSIS RESULT</h2>
+            <div id="status-title" class="text-3xl font-extrabold text-slate-600 mb-2">WAITING...</div>
+            <p id="status-desc" class="text-sm text-slate-400">Match the buttons to the gauges to calculate the market phase.</p>
+            
+            <div class="mt-auto pt-6 border-t border-slate-800">
+                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                    <span>Confidence</span>
+                    <span id="confidence-score">0%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="confidence-bar" class="h-full w-0 bg-slate-600 transition-all duration-500"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISUALIZERS: BUBBLES & LIST -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+        <!-- CRYPTO BUBBLES -->
+        <div class="card col-span-1 lg:col-span-2 p-0 bg-black h-[600px] relative">
+            <div class="bubble-wrapper">
+                <iframe src="https://cryptobubbles.net" class="bubble-iframe" title="Crypto Bubbles"></iframe>
+                <div class="absolute bottom-4 right-4 z-50">
+                     <a href="https://cryptobubbles.net" target="_blank" class="launch-btn flex items-center gap-2">
+                        <span>⛶ Open Fullscreen</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- MANUAL SENTIMENT LIST -->
+        <div class="card p-0 bg-[#131722]">
+             <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-white">🔥 Sentiment Leaders</h3>
+                <span class="text-[10px] bg-purple-900 text-purple-200 px-2 py-1 rounded">Weekly Pick</span>
+            </div>
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+                {
+                "colorTheme": "dark",
+                "dateRange": "12M",
+                "showChart": true,
+                "locale": "en",
+                "largeChartUrl": "",
+                "isTransparent": true,
+                "showSymbolLogo": true,
+                "width": "100%",
+                "height": "550",
+                "tabs": [
+                    {
+                    "title": "Top 5 Leaders",
+                    "symbols": [
+                        { "s": "BINANCE:XRPUSDT", "d": "1. XRP (Breakout)" },
+                        { "s": "BINANCE:SUIUSDT", "d": "2. SUI (Momentum)" },
+                        { "s": "BINANCE:DOGEUSDT", "d": "3. DOGE (Meme)" },
+                        { "s": "BINANCE:FETUSDT", "d": "4. FET (AI)" },
+                        { "s": "BINANCE:RENDERUSDT", "d": "5. RENDER (DePin)" }
+                    ]
+                    }
+                ]
+                }
+                </script>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW: NEWS & FEAR/GREED SPLIT -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- NEWS FEED (2/3 Width) -->
+        <div class="card lg:col-span-2 h-[600px] p-0 bg-[#131722]">
+             <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-white">📰 Live Crypto News</h3>
+                <span class="text-[10px] bg-blue-900 text-blue-200 px-2 py-1 rounded">Real-Time</span>
+            </div>
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+                {
+                "feedMode": "market",
+                "market": "crypto",
+                "isTransparent": true,
+                "displayMode": "regular",
+                "width": "100%",
+                "height": "100%",
+                "colorTheme": "dark",
+                "locale": "en"
+                }
+                </script>
+            </div>
+        </div>
+
+        <!-- FEAR & GREED + MARKET CAP (1/3 Width) -->
+        <div class="flex flex-col gap-6">
+            <!-- Fear & Greed Image -->
+            <div class="card flex flex-col items-center justify-center bg-slate-900 border-slate-700">
+                <div class="w-full flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-white">😨 Fear & Greed</h3>
+                    <span class="text-[10px] bg-slate-700 text-slate-300 px-2 py-1 rounded">Daily</span>
+                </div>
+                <img src="https://alternative.me/crypto/fear-and-greed-index.png" alt="Latest Crypto Fear & Greed Index" class="w-full rounded-lg shadow-lg">
+            </div>
+
+            <!-- Simple Market Summary -->
+            <div class="card bg-slate-900 border-slate-700 flex-1">
+                 <div class="w-full flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-white">📊 Market Cap</h3>
+                </div>
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+                    {
+                    "symbol": "CRYPTOCAP:TOTAL",
+                    "width": "100%",
+                    "height": "100%",
+                    "locale": "en",
+                    "dateRange": "1M",
+                    "colorTheme": "dark",
+                    "isTransparent": true,
+                    "autosize": true,
+                    "largeChartUrl": ""
+                    }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER WITH CREDIT -->
+    <footer class="mt-12 border-t border-slate-800 pt-6 text-center">
+        <p class="text-slate-500 text-sm font-mono">
+            Tool built by <span class="text-blue-400 font-bold">ezham aka Am0x</span> 🚀
+        </p>
+    </footer>
+
+    <script>
+        // 1. Logic State & Function
+        let state = { btc: null, money: null, eth: null };
+
+        function setSignal(type, value) {
+            state[type] = value;
+            // Reset this group
+            document.getElementById(`btn-${type}-buy`).classList.remove('active-buy');
+            document.getElementById(`btn-${type}-sell`).classList.remove('active-sell');
+            
+            // Activate clicked
+            if(value === 'bull') document.getElementById(`btn-${type}-buy`).classList.add('active-buy');
+            if(value === 'bear') document.getElementById(`btn-${type}-sell`).classList.add('active-sell');
+            
+            calculateStatus();
+        }
+
+        function calculateStatus() {
+            const resultCard = document.getElementById('result-card');
+            const title = document.getElementById('status-title');
+            const desc = document.getElementById('status-desc');
+
+            resultCard.className = "card status-output flex flex-col justify-center p-6"; // Reset
+
+            // NOTE: For BTC Dominance, "BUY" on Gauge means Dominance UP (Bullish for BTC, Bearish for Alts)
+            // "SELL" on Gauge means Dominance DOWN (Bearish for BTC, Bullish for Alts)
+
+            if (!state.btc || !state.money || !state.eth) return; 
+
+            // SCENARIO 1: BTC Dominance Gauge says BUY (Rising) -> Bad for Alts
+            if (state.btc === 'bull') {
+                title.innerText = "BITCOIN SEASON 🐻";
+                title.className = "text-3xl font-extrabold text-orange-500 mb-2";
+                desc.innerText = "Dominance Gauge is BUY (Rising). Alts will likely bleed.";
+                resultCard.classList.add('phase-btc');
+                setConfidence(90, 'bg-orange-500');
+                return;
+            }
+            
+            // SCENARIO 2: BTC Dominance SELL (Falling) + Money SELL (Leaving)
+            if (state.btc === 'bear' && state.money === 'bear') {
+                title.innerText = "MARKET CHOP 🦀";
+                title.className = "text-3xl font-extrabold text-slate-400 mb-2";
+                desc.innerText = "BTC Weak + Money Leaving = Risk Off.";
+                setConfidence(60, 'bg-slate-500');
+                return;
+            }
+
+            // SCENARIO 3: BTC Dominance SELL + Money BUY + ETH SELL
+            if (state.btc === 'bear' && state.money === 'bull' && state.eth === 'bear') {
+                title.innerText = "ACCUMULATION 🏗️";
+                title.className = "text-3xl font-extrabold text-blue-400 mb-2";
+                desc.innerText = "Money entering, but Rotation (ETH) is lagging.";
+                resultCard.classList.add('phase-acc');
+                setConfidence(75, 'bg-blue-500');
+                return;
+            }
+
+            // SCENARIO 4: ALL GREEN (BTC Sell, Money Buy, ETH Buy)
+            if (state.btc === 'bear' && state.money === 'bull' && state.eth === 'bull') {
+                title.innerText = "ALTSEASON IS GO 🚀";
+                title.className = "text-3xl font-extrabold text-green-400 mb-2 animate-pulse";
+                desc.innerText = "Dominance Falling + Money In + Rotation Active.";
+                resultCard.classList.add('phase-alt');
+                setConfidence(100, 'bg-green-500');
+                return;
+            }
+        }
+
+        function setConfidence(percent, colorClass) {
+            document.getElementById('confidence-bar').className = `h-full w-0 ${colorClass} transition-all duration-500`;
+            setTimeout(() => { document.getElementById('confidence-bar').style.width = percent + "%"; }, 100);
+            document.getElementById('confidence-score').innerText = percent + "%";
+        }
+
+        function resetDiagnostic() {
+            state = { btc: null, money: null, eth: null };
+            document.querySelectorAll('.diag-btn').forEach(btn => {
+                btn.classList.remove('active-buy', 'active-sell');
+            });
+            document.getElementById('status-title').innerText = "WAITING...";
+            document.getElementById('status-title').className = "text-3xl font-extrabold text-slate-600 mb-2";
+            document.getElementById('status-desc').innerText = "Match the buttons to the gauges to calculate the market phase.";
+            document.getElementById('confidence-bar').style.width = "0%";
+        }
+    </script>
+</body>
+</html>
