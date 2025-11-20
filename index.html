@@ -5,15 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Market Cycle Diagnostic Tool 🩺</title>
     
-    <!-- APP ICON & MANIFEST SETTINGS -->
+    <!-- iOS SETTINGS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="CycleDiag">
     
-    <!-- FIXED ICON: iOS requires PNG (Not SVG) -->
-    <!-- Using a high-quality 3D Bullish Chart Icon -->
+    <!-- ANDROID SETTINGS (New) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    
+    <!-- APP ICON (Universal) -->
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/bullish.png">
-    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/96/bullish.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/fluency/192/bullish.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://img.icons8.com/fluency/512/bullish.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
@@ -40,7 +44,7 @@
         .diag-btn.active-sell { background: #450a0a; border-color: #ef4444; color: #fca5a5; } 
         .diag-btn.active-neutral { background: #374151; border-color: #9ca3af; color: #e5e7eb; }
 
-        /* Tab Buttons for Watchlist */
+        /* Tab Buttons */
         .tab-btn {
             background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: 0.2s; border: none;
         }
@@ -340,7 +344,7 @@
         let state = { btc: null, money: null, eth: null };
 
         window.onload = function() {
-            // Load State
+            // Load Saved State
             const savedState = localStorage.getItem('marketDiagnosticState');
             if (savedState) {
                 state = JSON.parse(savedState);
