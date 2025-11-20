@@ -2,13 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Market Cycle Diagnostic Tool 🩺</title>
+    
+    <!-- APP ICON & MANIFEST SETTINGS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CycleDiag">
+    
+    <!-- Custom App Icon (Embedded SVG) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojMGUwZTBlIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQxIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMWUzYThiO3N0b3Atb3BhY2l0eToxIiAvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6IzBmMTcyYTtzdG9wLW9wYWNpdHk6MSIgLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0idXJsKCNncmFkMSkiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjE2MCIgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjIwIiBmaWxsPSJub25lIiBzdHJva2UtZGFzaGFycmF5PSI0MCAyMCIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTE1NiAyNTYgaDUwIGwzMCAtNjAgbDQwIDEyMCBsNDAgLTgwIGg1MCIgc3Ryb2tlPSIjMjJjNTVlIiBzdHJva2Utd2lkdGg9IjI0IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48Y2lyY2xlIGN4PSIzNjYiIGN5PSIyMzYiIHI9IjE1IiBmaWxsPSIjMjJjNTVlIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiB2YWx1ZXM9IjE7MDsxIiBkdXI9IjEuNXMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIi8+PC9jaXJjbGU+PC9zdmc+">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojMGUwZTBlIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQxIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMWUzYThiO3N0b3Atb3BhY2l0eToxIiAvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6IzBmMTcyYTtzdG9wLW9wYWNpdHk6MSIgLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0idXJsKCNncmFkMSkiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjE2MCIgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjIwIiBmaWxsPSJub25lIiBzdHJva2UtZGFzaGFycmF5PSI0MCAyMCIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTE1NiAyNTYgaDUwIGwzMCAtNjAgbDQwIDEyMCBsNDAgLTgwIGg1MCIgc3Ryb2tlPSIjMjJjNTVlIiBzdHJva2Utd2lkdGg9IjI0IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48Y2lyY2xlIGN4PSIzNjYiIGN5PSIyMzYiIHI9IjE1IiBmaWxsPSIjMjJjNTVlIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiB2YWx1ZXM9IjE7MDsxIiBkdXI9IjEuNXMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIi8+PC9jaXJjbGU+PC9zdmc+">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; padding-bottom: 50px; }
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; padding-bottom: 50px; -webkit-tap-highlight-color: transparent; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
         /* Card Styling */
@@ -29,7 +39,7 @@
         .diag-btn.active-sell { background: #450a0a; border-color: #ef4444; color: #fca5a5; } 
         .diag-btn.active-neutral { background: #374151; border-color: #9ca3af; color: #e5e7eb; }
 
-        /* Tab Buttons for Watchlist */
+        /* Tab Buttons */
         .tab-btn {
             background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: 0.2s; border: none;
         }
@@ -49,7 +59,7 @@
             color: #fbbf24;
         }
 
-        /* Utils */
+        /* Gauge Frame */
         .gauge-frame { 
             height: 300px; 
             margin-top: 0px; 
@@ -279,6 +289,7 @@
 
         <!-- FEAR & GREED + MARKET CAP -->
         <div class="flex flex-col gap-6">
+            <!-- Live Fear & Greed -->
             <div class="card flex flex-col items-center justify-center bg-slate-900 border-slate-700">
                 <div class="w-full flex justify-between items-center mb-4">
                     <h3 class="font-bold text-white">😨 Fear & Greed</h3>
@@ -379,10 +390,12 @@
         }
 
         function updateButtons(type, value) {
+            // Remove all actives
             document.getElementById(`btn-${type}-buy`).classList.remove('active-buy');
             document.getElementById(`btn-${type}-sell`).classList.remove('active-sell');
             document.getElementById(`btn-${type}-neutral`).classList.remove('active-neutral');
             
+            // Add correct active
             if(value === 'bull') document.getElementById(`btn-${type}-buy`).classList.add('active-buy');
             if(value === 'bear') document.getElementById(`btn-${type}-sell`).classList.add('active-sell');
             if(value === 'neutral') document.getElementById(`btn-${type}-neutral`).classList.add('active-neutral');
@@ -395,6 +408,7 @@
             calculateStatus();
         }
 
+        // --- 2. LOGIC ENGINE (UPDATED FOR NEUTRAL) ---
         function calculateStatus() {
             const resultCard = document.getElementById('result-card');
             const title = document.getElementById('status-title');
@@ -403,29 +417,17 @@
 
             if (!state.btc || !state.money || !state.eth) return; 
 
+            // 1. BTC Dominance is BUY (Rising) -> Bitcoin Season
             if (state.btc === 'bull') {
                 title.innerText = "BITCOIN SEASON 🐻";
                 title.className = "text-3xl font-extrabold text-orange-500 mb-2";
-                desc.innerText = "Dominance is rising. Alts will likely bleed or stall.";
+                desc.innerText = "Dominance is rising. Alts will bleed or stall.";
                 resultCard.classList.add('phase-btc');
                 setConfidence(90, 'bg-orange-500');
                 return;
             }
-            if (state.btc === 'bear' && state.money === 'bear') {
-                title.innerText = "MARKET CHOP 🦀";
-                title.className = "text-3xl font-extrabold text-slate-400 mb-2";
-                desc.innerText = "Bitcoin weak + Money leaving. Risk Off.";
-                setConfidence(60, 'bg-slate-500');
-                return;
-            }
-            if (state.btc === 'bear' && state.money === 'bull' && state.eth === 'bear') {
-                title.innerText = "ACCUMULATION 🏗️";
-                title.className = "text-3xl font-extrabold text-blue-400 mb-2";
-                desc.innerText = "Money entering, but rotation is weak. Pre-pump.";
-                resultCard.classList.add('phase-acc');
-                setConfidence(75, 'bg-blue-500');
-                return;
-            }
+
+            // 2. All Green -> ALTSEASON
             if (state.btc === 'bear' && state.money === 'bull' && state.eth === 'bull') {
                 title.innerText = "ALTSEASON IS GO 🚀";
                 title.className = "text-3xl font-extrabold text-green-400 mb-2 animate-pulse";
@@ -434,8 +436,27 @@
                 setConfidence(100, 'bg-green-500');
                 return;
             }
+
+            // 3. Accumulation (Mixed Signals)
+            if (state.money === 'bull' && (state.eth === 'neutral' || state.eth === 'bear')) {
+                title.innerText = "ACCUMULATION 🏗️";
+                title.className = "text-3xl font-extrabold text-blue-400 mb-2";
+                desc.innerText = "Money entering, but rotation is weak. Pre-pump.";
+                resultCard.classList.add('phase-acc');
+                setConfidence(75, 'bg-blue-500');
+                return;
+            }
+
+            // 4. Neutral/Chop
+            if (state.money === 'neutral' || state.money === 'bear') {
+                title.innerText = "MARKET CHOP 🦀";
+                title.className = "text-3xl font-extrabold text-slate-400 mb-2";
+                desc.innerText = "Money flow is weak or flat. Risk Off.";
+                setConfidence(50, 'bg-slate-500');
+                return;
+            }
             
-            // Fallback for Neutral
+            // Default Fallback
             title.innerText = "OBSERVING 👀";
             title.className = "text-3xl font-extrabold text-slate-400 mb-2";
             desc.innerText = "Signals are mixed. Wait for confirmation.";
@@ -456,10 +477,11 @@
             });
             document.getElementById('status-title').innerText = "WAITING...";
             document.getElementById('status-title').className = "text-3xl font-extrabold text-slate-600 mb-2";
+            document.getElementById('status-desc').innerText = "Match the buttons to the gauges to calculate the market phase.";
             document.getElementById('confidence-bar').style.width = "0%";
         }
 
-        // --- 4. WATCHLIST & API ---
+        // --- 3. WATCHLIST SWITCHER ---
         const watchlists = {
             sentiment: [
                 { "s": "BINANCE:XRPUSDT", "d": "1. XRP (Breakout)" },
