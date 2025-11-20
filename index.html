@@ -58,20 +58,12 @@
         }
         .gauge-scaler { width: 100%; height: 100%; transform: scale(0.95); transform-origin: top center; }
 
-        /* Crypto Bubbles Fix - RESTORED STANDARD LAYOUT */
+        /* Crypto Bubbles Fix */
         .bubble-wrapper { 
-            position: relative; 
-            height: 600px; 
-            width: 100%; 
-            background: #000; 
-            border-radius: 12px;
-            overflow: hidden; 
+            position: relative; height: 600px; width: 100%; background: #000; border-radius: 12px; overflow: hidden; 
         }
         .bubble-iframe { 
-            width: 100%; 
-            height: 100%; 
-            border: none; 
-            /* No offsets/crops to ensure full functionality */
+            width: 100%; height: 100%; border: none; 
         }
         
         .launch-btn {
@@ -79,6 +71,14 @@
             font-weight: bold; text-decoration: none; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5); font-size: 0.8rem;
         }
         .launch-btn:hover { transform: scale(1.05); background: #2563eb; }
+
+        /* Exit Tracker Styles */
+        .exit-input {
+            background: #0f172a; border: 1px solid #334155; color: white; 
+            padding: 4px 8px; border-radius: 4px; width: 60px; text-align: center; font-size: 0.8rem;
+        }
+        .exit-alarm { animation: flashRed 1s infinite; }
+        @keyframes flashRed { 0% { background-color: #1e293b; } 50% { background-color: #450a0a; } 100% { background-color: #1e293b; } }
     </style>
 </head>
 <body class="max-w-[1600px] mx-auto p-4">
@@ -105,12 +105,14 @@
     <!-- MAIN GRID: DIAGNOSTIC TOOLS -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
         
-        <!-- MODULE 1: BTC DOMINANCE -->
-        <div class="card border-t-4 border-orange-500">
+        <!-- MODULE 1: BTC DOMINANCE + EXIT TRACKER -->
+        <div class="card border-t-4 border-orange-500 flex flex-col h-full" id="btc-card">
             <div class="flex justify-between items-start">
                 <h3 class="font-bold text-white">1. BTC Dominance</h3>
                 <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">DRIVER</span>
             </div>
+            
+            <!-- Gauge -->
             <div class="gauge-frame"><div class="gauge-scaler">
                 <div class="tradingview-widget-container">
                     <div class="tradingview-widget-container__widget"></div>
@@ -119,8 +121,24 @@
                     </script>
                 </div>
             </div></div>
+            
+            <!-- NEW: EXIT TRACKER -->
+            <div class="bg-slate-800 rounded p-3 mb-4 border border-slate-700">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-[10px] text-slate-400 uppercase font-bold">Current %</label>
+                    <label class="text-[10px] text-slate-400 uppercase font-bold">Target %</label>
+                </div>
+                <div class="flex justify-between items-center gap-2 mb-2">
+                    <input type="number" id="btc-current" class="exit-input" placeholder="58.5" oninput="checkExitStatus()">
+                    <span class="text-slate-500 text-xs">➜</span>
+                    <input type="number" id="btc-target" class="exit-input border-orange-500" value="45" oninput="checkExitStatus()">
+                </div>
+                <div id="exit-message" class="text-xs text-center font-bold text-slate-400">Enter Current Value</div>
+            </div>
+
+            <!-- Buttons -->
             <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center">WHERE IS THE NEEDLE?</p>
-            <div class="flex flex-col gap-1">
+            <div class="flex flex-col gap-1 mt-auto">
                 <button class="diag-btn" id="btn-btc-sell" onclick="setSignal('btc', 'bear')">
                     <span>Gauge: <strong>SELL</strong></span><span class="text-xs text-slate-500">📉</span>
                 </button>
@@ -134,7 +152,7 @@
         </div>
 
         <!-- MODULE 2: MONEY FLOW -->
-        <div class="card border-t-4 border-green-500">
+        <div class="card border-t-4 border-green-500 flex flex-col h-full">
             <div class="flex justify-between items-start">
                 <h3 class="font-bold text-white">2. Altcoin Money</h3>
                 <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">VOLUME</span>
@@ -147,7 +165,7 @@
                     </script>
                 </div>
             </div></div>
-            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center">WHERE IS THE NEEDLE?</p>
+            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center mt-auto">WHERE IS THE NEEDLE?</p>
             <div class="flex flex-col gap-1">
                 <button class="diag-btn" id="btn-money-buy" onclick="setSignal('money', 'bull')">
                     <span>Gauge: <strong>BUY</strong></span><span class="text-xs text-slate-500">📈</span>
@@ -162,7 +180,7 @@
         </div>
 
         <!-- MODULE 3: ROTATION -->
-        <div class="card border-t-4 border-purple-500">
+        <div class="card border-t-4 border-purple-500 flex flex-col h-full">
             <div class="flex justify-between items-start">
                 <h3 class="font-bold text-white">3. ETH Strength</h3>
                 <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">ROTATION</span>
@@ -175,7 +193,7 @@
                     </script>
                 </div>
             </div></div>
-            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center">WHERE IS THE NEEDLE?</p>
+            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center mt-auto">WHERE IS THE NEEDLE?</p>
             <div class="flex flex-col gap-1">
                 <button class="diag-btn" id="btn-eth-buy" onclick="setSignal('eth', 'bull')">
                     <span>Gauge: <strong>BUY</strong></span><span class="text-xs text-slate-500">📈</span>
@@ -207,7 +225,7 @@
         </div>
     </div>
 
-    <!-- VISUALIZERS: BUBBLES (FULL) & SWITCHABLE LIST -->
+    <!-- VISUALIZERS -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
         <!-- CRYPTO BUBBLES -->
         <div class="card col-span-1 lg:col-span-2 p-0 bg-black h-[600px] relative">
@@ -221,7 +239,7 @@
             </div>
         </div>
 
-        <!-- DYNAMIC WATCHLIST WITH SECTOR SWITCHER -->
+        <!-- DYNAMIC WATCHLIST -->
         <div class="card p-0 bg-[#131722] flex flex-col h-[600px]">
              <div class="p-4 border-b border-slate-800">
                 <div class="flex justify-between items-center mb-4">
@@ -243,7 +261,7 @@
     
     <!-- TOTAL3 & FEAR/GREED -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- TOTAL3 CHART (THE REAL ALTCOIN INDEX) -->
+        <!-- TOTAL3 -->
         <div class="card lg:col-span-2 h-[600px] p-0 bg-[#131722]">
              <div class="p-4 border-b border-slate-800 flex justify-between items-center">
                 <h3 class="font-bold text-white">💰 TOTAL3 (Real Altcoin Market Cap)</h3>
@@ -253,21 +271,7 @@
                 <div class="tradingview-widget-container__widget"></div>
                 <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
                 {
-                "width": "100%",
-                "height": "100%",
-                "symbol": "CRYPTOCAP:TOTAL3",
-                "interval": "D",
-                "timezone": "Etc/UTC",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "enable_publishing": false,
-                "hide_top_toolbar": false,
-                "hide_legend": false,
-                "save_image": false,
-                "calendar": false,
-                "hide_volume": true,
-                "support_host": "https://www.tradingview.com"
+                "width": "100%", "height": "100%", "symbol": "CRYPTOCAP:TOTAL3", "interval": "D", "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en", "enable_publishing": false, "hide_top_toolbar": false, "hide_legend": false, "save_image": false, "calendar": false, "hide_volume": true, "support_host": "https://www.tradingview.com"
                 }
                 </script>
             </div>
@@ -275,7 +279,6 @@
 
         <!-- FEAR & GREED + MARKET CAP -->
         <div class="flex flex-col gap-6">
-            <!-- Live Fear & Greed -->
             <div class="card flex flex-col items-center justify-center bg-slate-900 border-slate-700">
                 <div class="w-full flex justify-between items-center mb-4">
                     <h3 class="font-bold text-white">😨 Fear & Greed</h3>
@@ -325,21 +328,49 @@
         let state = { btc: null, money: null, eth: null };
 
         window.onload = function() {
-            // Load Saved State
+            // Load State
             const savedState = localStorage.getItem('marketDiagnosticState');
             if (savedState) {
                 state = JSON.parse(savedState);
                 restoreUI();
             }
-            // Load Random Quote
+            
+            // Load Target from Memory
+            const savedTarget = localStorage.getItem('btcTargetVal');
+            if(savedTarget) document.getElementById('btc-target').value = savedTarget;
+
             const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
             document.getElementById('motivation-quote').innerText = `"${randomQuote}"`;
             
-            // Initial Data Load
             loadWatchlist('sentiment', document.querySelector('.tab-btn'));
             fetchFearGreed();
         };
 
+        // --- 2. EXIT TRACKER LOGIC ---
+        function checkExitStatus() {
+            const current = parseFloat(document.getElementById('btc-current').value);
+            const target = parseFloat(document.getElementById('btc-target').value);
+            const msg = document.getElementById('exit-message');
+            const card = document.getElementById('btc-card');
+            
+            if(!current || !target) return;
+
+            // Save Target preference
+            localStorage.setItem('btcTargetVal', target);
+
+            // Distance Calculation (BTC.D drops to trigger altseason)
+            const distance = (current - target).toFixed(2);
+
+            if (current <= target) {
+                msg.innerHTML = "🚨 <span class='text-red-500 font-extrabold'>EXIT MARKET NOW!</span> 🚨";
+                card.classList.add('exit-alarm'); // Flash Red
+            } else {
+                msg.innerHTML = `Distance to Target: <span class='text-blue-400'>${distance}%</span>`;
+                card.classList.remove('exit-alarm');
+            }
+        }
+
+        // --- 3. DIAGNOSTIC LOGIC ---
         function setSignal(type, value) {
             state[type] = value;
             localStorage.setItem('marketDiagnosticState', JSON.stringify(state)); 
@@ -348,12 +379,10 @@
         }
 
         function updateButtons(type, value) {
-            // Remove all actives
             document.getElementById(`btn-${type}-buy`).classList.remove('active-buy');
             document.getElementById(`btn-${type}-sell`).classList.remove('active-sell');
             document.getElementById(`btn-${type}-neutral`).classList.remove('active-neutral');
             
-            // Add correct active
             if(value === 'bull') document.getElementById(`btn-${type}-buy`).classList.add('active-buy');
             if(value === 'bear') document.getElementById(`btn-${type}-sell`).classList.add('active-sell');
             if(value === 'neutral') document.getElementById(`btn-${type}-neutral`).classList.add('active-neutral');
@@ -366,7 +395,6 @@
             calculateStatus();
         }
 
-        // --- 2. LOGIC ENGINE (UPDATED) ---
         function calculateStatus() {
             const resultCard = document.getElementById('result-card');
             const title = document.getElementById('status-title');
@@ -375,7 +403,6 @@
 
             if (!state.btc || !state.money || !state.eth) return; 
 
-            // 1. BTC Dominance is BUY (Rising) -> Bitcoin Season
             if (state.btc === 'bull') {
                 title.innerText = "BITCOIN SEASON 🐻";
                 title.className = "text-3xl font-extrabold text-orange-500 mb-2";
@@ -384,8 +411,21 @@
                 setConfidence(90, 'bg-orange-500');
                 return;
             }
-
-            // 2. All Green -> ALTSEASON
+            if (state.btc === 'bear' && state.money === 'bear') {
+                title.innerText = "MARKET CHOP 🦀";
+                title.className = "text-3xl font-extrabold text-slate-400 mb-2";
+                desc.innerText = "Bitcoin weak + Money leaving. Risk Off.";
+                setConfidence(60, 'bg-slate-500');
+                return;
+            }
+            if (state.btc === 'bear' && state.money === 'bull' && state.eth === 'bear') {
+                title.innerText = "ACCUMULATION 🏗️";
+                title.className = "text-3xl font-extrabold text-blue-400 mb-2";
+                desc.innerText = "Money entering, but rotation is weak. Pre-pump.";
+                resultCard.classList.add('phase-acc');
+                setConfidence(75, 'bg-blue-500');
+                return;
+            }
             if (state.btc === 'bear' && state.money === 'bull' && state.eth === 'bull') {
                 title.innerText = "ALTSEASON IS GO 🚀";
                 title.className = "text-3xl font-extrabold text-green-400 mb-2 animate-pulse";
@@ -394,31 +434,12 @@
                 setConfidence(100, 'bg-green-500');
                 return;
             }
-
-            // 3. Accumulation (Mixed Signals)
-            if (state.money === 'bull' && (state.eth === 'neutral' || state.eth === 'bear')) {
-                title.innerText = "ACCUMULATION 🏗️";
-                title.className = "text-3xl font-extrabold text-blue-400 mb-2";
-                desc.innerText = "Money is entering, but rotation is weak. Pre-pump.";
-                resultCard.classList.add('phase-acc');
-                setConfidence(75, 'bg-blue-500');
-                return;
-            }
-
-            // 4. Neutral/Chop
-            if (state.money === 'neutral' || state.money === 'bear') {
-                title.innerText = "MARKET CHOP 🦀";
-                title.className = "text-3xl font-extrabold text-slate-400 mb-2";
-                desc.innerText = "Money flow is weak or flat. Risk Off.";
-                setConfidence(50, 'bg-slate-500');
-                return;
-            }
             
-            // Default Fallback
-            title.innerText = "UNCERTAIN ☁️";
-            title.className = "text-3xl font-extrabold text-slate-500 mb-2";
-            desc.innerText = "Signals are conflicting. Wait for clarity.";
-            setConfidence(30, 'bg-slate-700');
+            // Fallback for Neutral
+            title.innerText = "OBSERVING 👀";
+            title.className = "text-3xl font-extrabold text-slate-400 mb-2";
+            desc.innerText = "Signals are mixed. Wait for confirmation.";
+            setConfidence(50, 'bg-slate-500');
         }
 
         function setConfidence(percent, colorClass) {
@@ -435,11 +456,10 @@
             });
             document.getElementById('status-title').innerText = "WAITING...";
             document.getElementById('status-title').className = "text-3xl font-extrabold text-slate-600 mb-2";
-            document.getElementById('status-desc').innerText = "Match the buttons to the gauges to calculate the market phase.";
             document.getElementById('confidence-bar').style.width = "0%";
         }
 
-        // --- 3. WATCHLIST SWITCHER ---
+        // --- 4. WATCHLIST & API ---
         const watchlists = {
             sentiment: [
                 { "s": "BINANCE:XRPUSDT", "d": "1. XRP (Breakout)" },
@@ -472,54 +492,37 @@
         };
 
         function loadWatchlist(key, btnElement) {
-            // Update Title
             document.getElementById('list-title').innerText = "🔥 " + key.charAt(0).toUpperCase() + key.slice(1) + " Leaders";
-            
-            // Update Tabs UI
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
             if(btnElement) btnElement.classList.add('active-tab');
-
-            // Clear & Inject new widget
             const container = document.getElementById('watchlist-container');
             container.innerHTML = ''; 
-            
             const div = document.createElement('div');
             div.className = 'tradingview-widget-container';
             div.innerHTML = `<div class="tradingview-widget-container__widget"></div>`;
-            
             const script = document.createElement('script');
             script.type = 'text/javascript';
             script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
             script.async = true;
             script.innerHTML = JSON.stringify({
-                "colorTheme": "dark",
-                "dateRange": "12M",
-                "showChart": true,
-                "locale": "en",
-                "largeChartUrl": "",
-                "isTransparent": true,
-                "showSymbolLogo": true,
-                "width": "100%",
-                "height": "100%", 
+                "colorTheme": "dark", "dateRange": "12M", "showChart": true, "locale": "en",
+                "largeChartUrl": "", "isTransparent": true, "showSymbolLogo": true,
+                "width": "100%", "height": "100%", 
                 "tabs": [ { "title": "List", "symbols": watchlists[key] } ]
             });
-
             div.appendChild(script);
             container.appendChild(div);
         }
 
-        // --- 4. LIVE FEAR & GREED DATA ---
         async function fetchFearGreed() {
             try {
                 const res = await fetch('https://api.alternative.me/fng/');
                 const data = await res.json();
                 const val = data.data[0].value;
                 const text = data.data[0].value_classification;
-                
                 const el = document.getElementById('fng-value');
                 el.innerText = `${text}: ${val}`;
-                el.classList.remove('animate-pulse'); // Stop loading animation
-                
+                el.classList.remove('animate-pulse');
                 if(val < 25) { el.className = "text-xs font-bold bg-red-900 text-red-200 px-2 py-1 rounded"; }
                 else if(val > 75) { el.className = "text-xs font-bold bg-green-900 text-green-200 px-2 py-1 rounded"; }
                 else { el.className = "text-xs font-bold bg-slate-700 text-slate-300 px-2 py-1 rounded"; }
