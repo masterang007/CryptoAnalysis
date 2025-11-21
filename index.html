@@ -2,646 +2,589 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPCM Operations Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Market Cycle Diagnostic Tool 🩺</title>
     
-    <!-- React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- iOS SETTINGS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CycleDiag">
     
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- ANDROID SETTINGS -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
     
-    <!-- Tailwind CSS -->
+    <!-- APP ICON -->
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/bullish.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/fluency/192/bullish.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://img.icons8.com/fluency/512/bullish.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- SheetJS for Excel Processing -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    
-    <!-- Tailwind Config for Custom Colors -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        gray: {
-                            750: '#2d3748',
-                            850: '#1a202c',
-                            950: '#0d1117',
-                        },
-                        plant: {
-                            green: '#8cc63f', 
-                            orange: '#f59e0b',
-                            red: '#ef4444',
-                            blue: '#3b82f6',
-                            dark: '#111827'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        mono: ['Fira Code', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
-
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; padding-bottom: 80px; padding-top: env(safe-area-inset-top); }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Card Styling */
+        .card { background-color: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; position: relative; overflow: hidden; transition: all 0.2s; }
+        .card:hover { border-color: #475569; }
+
+        /* Diagnostic Buttons */
+        .diag-btn {
+            width: 100%; padding: 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+            border: 2px solid #334155; background: #0f172a; color: #94a3b8; transition: all 0.2s;
+            text-align: center; cursor: pointer; margin-bottom: 5px;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        ::-webkit-scrollbar-track {
-            background: #1f2937; 
+        .diag-btn:hover { background: #1e293b; border-color: #475569; }
+        
+        /* Active States */
+        .diag-btn.active-buy { background: #172554; border-color: #3b82f6; color: #60a5fa; } 
+        .diag-btn.active-sell { background: #450a0a; border-color: #ef4444; color: #fca5a5; } 
+        .diag-btn.active-neutral { background: #374151; border-color: #9ca3af; color: #e5e7eb; }
+
+        /* Tab Buttons */
+        .tab-btn {
+            background: #334155; color: #94a3b8; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: 0.2s; border: none;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280; 
+        .tab-btn:hover { background: #475569; color: white; }
+        .tab-btn.active-tab { background: #3b82f6; color: white; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4); }
+
+        /* Status Output Area */
+        .status-output { background: #020617; border-left: 4px solid #64748b; }
+        .status-output.phase-btc { border-color: #f59e0b; }
+        .status-output.phase-alt { border-color: #22c55e; box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        .status-output.phase-acc { border-color: #3b82f6; }
+
+        /* Motivation Banner */
+        .quote-banner {
+            background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #fbbf24; /* Gold border for wealth */
+            color: #fbbf24;
         }
 
-        /* Gauge Animation */
-        .gauge-path {
-            transition: stroke-dashoffset 1.5s ease-out;
+        /* Utils */
+        .gauge-frame { 
+            height: 350px; /* Optimized height */
+            margin-top: 0px; 
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: flex-start;
         }
-        
-        /* Chart Animation */
-        .chart-line {
-            stroke-dasharray: 1000;
-            stroke-dashoffset: 1000;
-            animation: drawLine 2s ease-out forwards;
+        .gauge-scaler { width: 100%; height: 100%; transform: scale(0.95); transform-origin: top center; }
+
+        /* Live Ticker Frame */
+        .ticker-frame { height: 70px; margin-bottom: 5px; border-bottom: 1px solid #334155; }
+
+        /* Crypto Bubbles Fix */
+        .bubble-wrapper { 
+            position: relative; height: 600px; width: 100%; background: #000; border-radius: 12px; overflow: hidden; 
         }
+        .bubble-iframe { width: 100%; height: 100%; border: none; }
         
-        @keyframes drawLine {
-            to {
-                stroke-dashoffset: 0;
-            }
+        .launch-btn {
+            pointer-events: auto; background: #3b82f6; color: white; padding: 8px 16px; border-radius: 6px;
+            font-weight: bold; text-decoration: none; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5); font-size: 0.8rem;
+        }
+        .launch-btn:hover { transform: scale(1.05); background: #2563eb; }
+
+        /* Exit Tracker Styles */
+        .exit-input {
+            background: #0f172a; border: 1px solid #334155; color: white; 
+            padding: 4px 8px; border-radius: 4px; width: 60px; text-align: center; font-size: 0.8rem;
+        }
+        .exit-alarm { animation: flashRed 1s infinite; }
+        @keyframes flashRed { 0% { background-color: #1e293b; } 50% { background-color: #450a0a; } 100% { background-color: #1e293b; } }
+
+        .pulse-dot {
+            width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 6px;
+            box-shadow: 0 0 0 rgba(34, 197, 94, 0.4); animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
     </style>
 </head>
-<body class="bg-gray-950 text-gray-100 antialiased">
-    <div id="root"></div>
+<body class="max-w-[1600px] mx-auto p-4">
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+    <!-- HEADER -->
+    <header class="flex flex-col md:flex-row justify-between items-end mb-6 border-b border-slate-800 pb-6">
+        <div>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight flex items-center">
+                <span class="pulse-dot"></span> Market Diagnostic <span class="text-blue-500 ml-2">Terminal</span>
+            </h1>
+            <p class="text-slate-400 text-sm mt-1">Match the buttons to the gauge colors to see the real market phase.</p>
+        </div>
+        <div class="flex gap-2 mt-4 md:mt-0">
+            <button onclick="resetDiagnostic()" class="text-xs text-slate-500 hover:text-white underline">Reset All</button>
+        </div>
+    </header>
 
-        // --- Icons Components (Inlined for stability) ---
-        const Icons = {
-            Zap: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
-            Activity: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-            Thermometer: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>,
-            GaugeIcon: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>,
-            Droplet: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-2-3-2-3l-5-8-5 8s-2 1-2 3a7 7 0 0 0 7 7z"/></svg>,
-            Droplets: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.8-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg>,
-            LayoutDashboard: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
-            Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
-            Bell: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
-            Menu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
-            Calendar: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
-            Box: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
-            ShieldAlert: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
-            TrendingUp: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-            Upload: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        };
+    <!-- DAILY MOTIVATION QUOTE -->
+    <div class="quote-banner rounded-lg p-4 mb-8 flex items-center justify-center shadow-lg">
+        <div class="text-center">
+            <span class="text-xs uppercase tracking-widest opacity-70 mb-1 block">Daily HODL Wisdom</span>
+            <p id="motivation-quote" class="text-lg font-bold italic">"Loading wisdom..."</p>
+        </div>
+    </div>
 
-        // --- RPCM LOGO COMPONENT ---
-        const RpcmLogo = ({ className }) => (
-            <svg viewBox="0 0 200 180" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M100 5 L190 50 V140 L100 185 L10 140 V50 L100 5Z" stroke="currentColor" strokeWidth="12" strokeLinejoin="round"/>
-                <path d="M25 65 L175 65" stroke="currentColor" strokeWidth="2" opacity="0.5"/> 
-                <path d="M25 125 L175 125" stroke="currentColor" strokeWidth="2" opacity="0.5"/>
-                <text x="100" y="115" textAnchor="middle" fill="currentColor" fontSize="52" fontWeight="bold" fontFamily="Arial, sans-serif" letterSpacing="2">RPCM</text>
-            </svg>
-        );
-
-        // --- Custom SVG Gauge Component ---
-        const Gauge = ({ value, max, title, unit, color, icon: Icon }) => {
-            const radius = 80;
-            const stroke = 12;
-            const normalizedValue = Math.min(Math.max(value, 0), max);
+    <!-- MAIN GRID: DIAGNOSTIC TOOLS -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
+        
+        <!-- MODULE 1: BTC DOMINANCE -->
+        <div class="card border-t-4 border-orange-500 flex flex-col h-full" id="btc-card">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="font-bold text-white">1. BTC Dominance</h3>
+                <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">DRIVER</span>
+            </div>
             
-            const [displayValue, setDisplayValue] = useState(0);
-
-            useEffect(() => {
-                let start = 0;
-                const duration = 1500;
-                const startTime = performance.now();
-                const animate = (currentTime) => {
-                    const elapsed = currentTime - startTime;
-                    const progress = Math.min(elapsed / duration, 1);
-                    const ease = 1 - Math.pow(1 - progress, 4);
-                    setDisplayValue(start + (value - start) * ease);
-                    if (progress < 1) requestAnimationFrame(animate);
-                };
-                requestAnimationFrame(animate);
-            }, [value, max]);
-
-            const percentage = normalizedValue / max;
-
-            return (
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-center relative overflow-hidden group">
-                    <div className="flex items-center justify-between w-full mb-4 z-10">
-                        <div className="flex items-center gap-2 text-gray-400 text-sm font-medium uppercase tracking-wider">
-                            <span>{title}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <div className={`w-2 h-2 rounded-full ${percentage > 0.9 ? 'bg-plant-red animate-pulse' : 'bg-plant-green'}`}></div>
-                        </div>
-                    </div>
-
-                    <div className="relative w-48 h-28 z-10">
-                        <svg viewBox="0 0 200 110" className="w-full h-full">
-                            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#374151" strokeWidth={stroke} strokeLinecap="round"/>
-                            <path 
-                                d="M 20 100 A 80 80 0 0 1 180 100" fill="none" 
-                                stroke={`url(#gradient-${title.replace(/[^a-zA-Z0-9]/g, '')})`}
-                                strokeWidth={stroke} strokeLinecap="round"
-                                strokeDasharray={`${Math.PI * 80}`}
-                                strokeDashoffset={`${Math.PI * 80 * (1 - percentage)}`}
-                                className="gauge-path"
-                            />
-                            <defs>
-                                <linearGradient id={`gradient-${title.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stopColor={color === 'text-plant-green' ? '#8cc63f' : color === 'text-plant-orange' ? '#d97706' : '#2563eb'} />
-                                    <stop offset="100%" stopColor={color === 'text-plant-green' ? '#a3d95b' : color === 'text-plant-orange' ? '#fbbf24' : '#60a5fa'} />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <div className="absolute bottom-3 left-0 text-xs text-gray-500 font-mono font-bold">0</div>
-                        <div className="absolute bottom-3 right-0 text-xs text-gray-500 font-mono font-bold">{max}</div>
-                        <div className="absolute bottom-0 left-0 right-0 text-center transform translate-y-1">
-                            <div className={`text-3xl font-bold ${color} font-mono`}>{displayValue.toFixed(2)}</div>
-                            <div className="text-gray-500 text-sm font-medium">{unit}</div>
-                        </div>
-                    </div>
-                    <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-transparent to-${color.replace('text-', '')}/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`}></div>
+            <!-- NEW: LIVE TICKER (Accurate Data) -->
+            <div class="ticker-frame">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-single-ticker.js" async>
+                    {
+                    "symbol": "CRYPTOCAP:BTC.D",
+                    "width": "100%",
+                    "isTransparent": true,
+                    "colorTheme": "dark",
+                    "locale": "en"
+                    }
+                    </script>
                 </div>
-            );
-        };
+            </div>
 
-        // --- Trend Chart Component ---
-        const TrendChart = ({ data, dataKey, color, unit }) => {
-            const height = 200;
-            const width = 800;
-            const padding = 40;
-            const values = data.map(d => d[dataKey]);
-            const minVal = Math.min(...values) * 0.9;
-            const maxVal = Math.max(...values) * 1.1;
-            const getX = (index) => padding + (index * (width - padding * 2)) / (data.length - 1);
-            const getY = (value) => height - padding - ((value - minVal) / (maxVal - minVal)) * (height - padding * 2);
-            const points = data.map((d, i) => `${getX(i)},${getY(d[dataKey])}`).join(' ');
-
-            return (
-                <div className="w-full overflow-x-auto">
-                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full min-w-[600px]">
-                        <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#374151" strokeWidth="1" />
-                        <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#374151" strokeWidth="1" />
-                        <polyline points={points} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-line"/>
-                        {data.map((d, i) => (
-                            <g key={i} className="group">
-                                <circle cx={getX(i)} cy={getY(d[dataKey])} r="4" fill={color} className="transition-all group-hover:r-6" />
-                                <rect x={getX(i) - 25} y={getY(d[dataKey]) - 35} width="50" height="24" rx="4" fill="#1f2937" className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <text x={getX(i)} y={getY(d[dataKey]) - 20} textAnchor="middle" fill="white" fontSize="10" className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">{d[dataKey]}</text>
-                                <text x={getX(i)} y={height - 10} textAnchor="middle" fill="#9ca3af" fontSize="10">{d.time}</text>
-                            </g>
-                        ))}
-                    </svg>
+            <!-- Gauge -->
+            <div class="gauge-frame"><div class="gauge-scaler">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+                    { "interval": "1D", "width": "100%", "isTransparent": true, "height": "100%", "symbol": "CRYPTOCAP:BTC.D", "showIntervalTabs": true, "displayMode": "single", "locale": "en", "colorTheme": "dark" }
+                    </script>
                 </div>
-            );
-        };
-
-        // --- Production Stat Card Component ---
-        const ProductionCard = ({ title, actual, target, unit }) => {
-            const percent = (actual / target) * 100;
-            const isLow = percent < 90; 
-            return (
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
-                    <div className="text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">{title}</div>
-                    <div className="flex justify-between items-end mb-2">
-                        <div>
-                            <span className="text-2xl font-bold text-white">{actual.toLocaleString()}</span>
-                            <span className="text-sm text-gray-500 ml-1">{unit}</span>
-                        </div>
-                        <div className="text-right">
-                            <div className="text-xs text-gray-500">Target</div>
-                            <div className="text-sm font-medium text-gray-300">{target.toLocaleString()}</div>
-                        </div>
-                    </div>
-                    <div className="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
-                        <div className={`h-full rounded-full ${isLow ? 'bg-plant-red' : 'bg-plant-green'}`} style={{ width: `${Math.min(percent, 100)}%` }}></div>
-                    </div>
-                    <div className="mt-2 text-xs flex justify-between">
-                        <span className={isLow ? "text-red-400" : "text-green-400"}>{percent.toFixed(1)}% Achieved</span>
-                    </div>
+            </div></div>
+            
+            <!-- EXIT TRACKER -->
+            <div class="bg-slate-800 rounded p-3 mb-4 border border-slate-700">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-[10px] text-slate-400 uppercase font-bold">Current %</label>
+                    <label class="text-[10px] text-slate-400 uppercase font-bold">Target %</label>
                 </div>
-            );
-        };
-
-        // --- KPI Table Row ---
-        const KpiRow = ({ label, value, target, unit, inverse = false }) => {
-            const diff = ((value - target) / target) * 100;
-            const isGood = inverse ? value <= target : value >= target;
-            return (
-                <div className="flex justify-between items-center py-3 border-b border-gray-800 last:border-0">
-                    <span className="text-sm text-gray-300">{label}</span>
-                    <div className="flex items-center gap-4">
-                        <div className="text-right">
-                            <div className="text-sm font-mono font-bold text-white">{value} <span className="text-gray-500 text-xs">{unit}</span></div>
-                            <div className="text-xs text-gray-500">tgt: {target}</div>
-                        </div>
-                        <div className={`text-xs px-2 py-1 rounded font-medium w-16 text-center ${isGood ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-                            {isGood ? 'OK' : `${Math.abs(diff).toFixed(1)}%`}
-                        </div>
-                    </div>
+                <div class="flex justify-between items-center gap-2 mb-2">
+                    <input type="number" id="btc-current" class="exit-input" placeholder="58.71" oninput="checkExitStatus()">
+                    <span class="text-slate-500 text-xs">➜</span>
+                    <input type="number" id="btc-target" class="exit-input border-orange-500" value="45" oninput="checkExitStatus()">
                 </div>
-            );
-        };
+                <div id="exit-message" class="text-xs text-center font-bold text-slate-400">Enter Value from Top Ticker</div>
+            </div>
 
-        // --- Main Dashboard Component ---
-        const Dashboard = () => {
-            const [isSidebarOpen, setSidebarOpen] = useState(false);
-            const [trendTab, setTrendTab] = useState('power');
-            const fileInputRef = useRef(null);
-            const [lastUpdated, setLastUpdated] = useState('21-Nov-2025');
+            <!-- Buttons -->
+            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center">MATCH THE NEEDLE</p>
+            <div class="flex flex-col gap-1 mt-auto">
+                <button class="diag-btn" id="btn-btc-sell" onclick="setSignal('btc', 'bear')">
+                    <span>Needle in <strong>RED</strong> (Dropping)</span><span class="text-xs text-red-400">📉</span>
+                </button>
+                <button class="diag-btn" id="btn-btc-neutral" onclick="setSignal('btc', 'neutral')">
+                    <span>Needle in <strong>GRAY</strong> (Neutral)</span><span class="text-xs text-slate-400">😐</span>
+                </button>
+                <button class="diag-btn" id="btn-btc-buy" onclick="setSignal('btc', 'bull')">
+                    <span>Needle in <strong>BLUE</strong> (Rising)</span><span class="text-xs text-blue-400">📈</span>
+                </button>
+            </div>
+        </div>
 
-            // EXTENDED STATE including HSSE and Efficiency
-            const [dashboardData, setDashboardData] = useState({
-                production: [
-                    { id: 'cta', title: 'CTA Production', actual: 1555, target: 1808, unit: 'tonnes' },
-                    { id: 'pta', title: 'PTA Production', actual: 1291, target: 1857, unit: 'tonnes' },
-                ],
-                availability: { actual: 86.0, target: 97.0 },
-                metrics: {
-                    power: [
-                        { id: 'p1', title: 'Plant Power', value: 14.59, max: 20, unit: 'MW', icon: 'Zap' },
-                        { id: 'p2', title: 'Power Gen', value: 9.02, max: 15, unit: 'MW', icon: 'Zap' },
-                    ],
-                    steam: [
-                        { id: 's1', title: 'Steam to DHT', value: 65.45, max: 100, unit: 'TPH', icon: 'Thermometer' },
-                        { id: 's3', title: '4.4 Steam Header', value: 4.26, max: 6, unit: 'kg/cm2', icon: 'GaugeIcon' },
-                    ],
-                    flow: [
-                        { id: 'f1', title: 'PX Rate', value: 48.09, max: 60, unit: 'TPH', icon: 'Droplet' },
-                        { id: 'f2', title: 'ADM 2 Flow', value: 46.96, max: 60, unit: 'TPH', icon: 'Droplets' },
-                    ]
-                },
-                // New HSSE Data
-                hsse: {
-                    alarms: 0,
-                    bypass: 2,
-                    limit: 14,
-                    leaks: { toxic: 0, hac: 0, hotOil: 0, gas: 0 }
-                },
-                // New Efficiency Data
-                efficiency: {
-                    power: { val: 291, tgt: 175 },
-                    hac: { val: 28.8, tgt: 28.3 },
-                    px: { val: 15.45, tgt: 14.0 },
-                    catalyst: { val: 0.44, tgt: 0.42 },
-                    wwt: { val: 49, tgt: 200 },
-                    water: { val: 149, unit: 'm3' }
-                },
-                hourly: [
-                    { time: '06:00', power: 14.2, steam: 63.5, flow: 47.5 },
-                    { time: '07:00', power: 14.4, steam: 64.2, flow: 48.1 },
-                    { time: '08:00', power: 14.8, steam: 65.8, flow: 49.0 },
-                    { time: '09:00', power: 14.9, steam: 66.1, flow: 48.5 },
-                    { time: '10:00', power: 14.6, steam: 65.4, flow: 48.0 },
-                    { time: '11:00', power: 14.5, steam: 65.0, flow: 47.8 },
-                    { time: '12:00', power: 14.7, steam: 65.5, flow: 48.2 },
-                    { time: '13:00', power: 15.0, steam: 66.5, flow: 49.2 },
-                    { time: '14:00', power: 14.8, steam: 66.0, flow: 48.8 },
-                    { time: '15:00', power: 14.5, steam: 65.2, flow: 48.0 },
-                    { time: '16:00', power: 14.3, steam: 64.8, flow: 47.6 },
-                    { time: '17:00', power: 14.6, steam: 65.1, flow: 47.9 },
-                    { time: '18:00', power: 14.4, steam: 65.3, flow: 48.1 },
-                ]
-            });
+        <!-- MODULE 2: MONEY FLOW -->
+        <div class="card border-t-4 border-green-500 flex flex-col h-full">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="font-bold text-white">2. Altcoin Money</h3>
+                <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">VOLUME</span>
+            </div>
+             <!-- NEW: LIVE TICKER -->
+             <div class="ticker-frame">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-single-ticker.js" async>
+                    { "symbol": "CRYPTOCAP:TOTAL2", "width": "100%", "isTransparent": true, "colorTheme": "dark", "locale": "en" }
+                    </script>
+                </div>
+            </div>
+            <div class="gauge-frame"><div class="gauge-scaler">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+                    { "interval": "1D", "width": "100%", "isTransparent": true, "height": "100%", "symbol": "CRYPTOCAP:TOTAL2", "showIntervalTabs": true, "displayMode": "single", "locale": "en", "colorTheme": "dark" }
+                    </script>
+                </div>
+            </div></div>
+            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center mt-auto">MATCH THE NEEDLE</p>
+            <div class="flex flex-col gap-1">
+                <button class="diag-btn" id="btn-money-buy" onclick="setSignal('money', 'bull')">
+                    <span>Needle in <strong>BLUE</strong> (Money In)</span><span class="text-xs text-blue-400">📈</span>
+                </button>
+                <button class="diag-btn" id="btn-money-neutral" onclick="setSignal('money', 'neutral')">
+                    <span>Needle in <strong>GRAY</strong> (Neutral)</span><span class="text-xs text-slate-400">😐</span>
+                </button>
+                <button class="diag-btn" id="btn-money-sell" onclick="setSignal('money', 'bear')">
+                    <span>Needle in <strong>RED</strong> (Money Out)</span><span class="text-xs text-red-400">📉</span>
+                </button>
+            </div>
+        </div>
 
-            // Load data from LocalStorage on startup
-            useEffect(() => {
-                const stored = localStorage.getItem('rpcm_dashboard_data_v2');
-                if (stored) {
-                    try {
-                        const parsed = JSON.parse(stored);
-                        setDashboardData(prev => ({...prev, ...parsed}));
-                        setLastUpdated('Restored from Storage');
-                    } catch (e) { console.error("Storage Load Failed", e); }
+        <!-- MODULE 3: ROTATION -->
+        <div class="card border-t-4 border-purple-500 flex flex-col h-full">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="font-bold text-white">3. ETH Strength</h3>
+                <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-300">ROTATION</span>
+            </div>
+             <!-- NEW: LIVE TICKER -->
+             <div class="ticker-frame">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-single-ticker.js" async>
+                    { "symbol": "BINANCE:ETHBTC", "width": "100%", "isTransparent": true, "colorTheme": "dark", "locale": "en" }
+                    </script>
+                </div>
+            </div>
+            <div class="gauge-frame"><div class="gauge-scaler">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+                    { "interval": "1D", "width": "100%", "isTransparent": true, "height": "100%", "symbol": "BINANCE:ETHBTC", "showIntervalTabs": true, "displayMode": "single", "locale": "en", "colorTheme": "dark" }
+                    </script>
+                </div>
+            </div></div>
+            <p class="text-[10px] text-slate-500 mb-2 font-mono uppercase text-center mt-auto">MATCH THE NEEDLE</p>
+            <div class="flex flex-col gap-1">
+                <button class="diag-btn" id="btn-eth-buy" onclick="setSignal('eth', 'bull')">
+                    <span>Needle in <strong>BLUE</strong> (ETH Wins)</span><span class="text-xs text-blue-400">📈</span>
+                </button>
+                <button class="diag-btn" id="btn-eth-neutral" onclick="setSignal('eth', 'neutral')">
+                    <span>Needle in <strong>GRAY</strong> (Neutral)</span><span class="text-xs text-slate-400">😐</span>
+                </button>
+                <button class="diag-btn" id="btn-eth-sell" onclick="setSignal('eth', 'bear')">
+                    <span>Needle in <strong>RED</strong> (BTC Wins)</span><span class="text-xs text-red-400">📉</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODULE 4: THE RESULT (CALCULATOR) -->
+        <div class="card status-output flex flex-col justify-center p-6" id="result-card">
+            <h2 class="text-slate-500 text-xs uppercase tracking-widest mb-2">DIAGNOSIS RESULT</h2>
+            <div id="status-title" class="text-3xl font-extrabold text-slate-600 mb-2">WAITING...</div>
+            <p id="status-desc" class="text-sm text-slate-400">Match the buttons to the gauges to calculate the market phase.</p>
+            
+            <div class="mt-auto pt-6 border-t border-slate-800">
+                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                    <span>Confidence</span>
+                    <span id="confidence-score">0%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="confidence-bar" class="h-full w-0 bg-slate-600 transition-all duration-500"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISUALIZERS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+        <!-- CRYPTO BUBBLES -->
+        <div class="card col-span-1 lg:col-span-2 p-0 bg-black h-[600px] relative">
+            <div class="bubble-wrapper">
+                <iframe src="https://cryptobubbles.net" class="bubble-iframe" title="Crypto Bubbles"></iframe>
+                <div class="absolute bottom-4 right-4 z-50">
+                     <a href="https://cryptobubbles.net" target="_blank" class="launch-btn flex items-center gap-2">
+                        <span>⛶ Open Fullscreen</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- DYNAMIC WATCHLIST -->
+        <div class="card p-0 bg-[#131722] flex flex-col h-[600px]">
+             <div class="p-4 border-b border-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-white" id="list-title">🔥 Sentiment Leaders</h3>
+                </div>
+                <!-- SECTOR BUTTONS -->
+                <div class="flex gap-2 flex-wrap">
+                    <button class="tab-btn active-tab" onclick="loadWatchlist('sentiment', this)">Sentiment</button>
+                    <button class="tab-btn" onclick="loadWatchlist('memes', this)">Memes</button>
+                    <button class="tab-btn" onclick="loadWatchlist('ai', this)">AI</button>
+                    <button class="tab-btn" onclick="loadWatchlist('gaming', this)">Gaming</button>
+                </div>
+            </div>
+            <div class="flex-1 relative" id="watchlist-container">
+                <!-- Widget Injected Here via JS -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- TOTAL3 & FEAR/GREED -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- TOTAL3 -->
+        <div class="card lg:col-span-2 h-[600px] p-0 bg-[#131722]">
+             <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-white">💰 TOTAL3 (Real Altcoin Market Cap)</h3>
+                <span class="text-[10px] bg-green-900 text-green-200 px-2 py-1 rounded">Excl. BTC & ETH</span>
+            </div>
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+                {
+                "width": "100%", "height": "100%", "symbol": "CRYPTOCAP:TOTAL3", "interval": "D", "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en", "enable_publishing": false, "hide_top_toolbar": false, "hide_legend": false, "save_image": false, "calendar": false, "hide_volume": true, "support_host": "https://www.tradingview.com"
                 }
-            }, []);
+                </script>
+            </div>
+        </div>
 
-            // --- EXCEL PARSING LOGIC ---
-            const handleFileUpload = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    const bstr = evt.target.result;
-                    const wb = XLSX.read(bstr, { type: 'binary' });
-                    const wsName = wb.SheetNames[0];
-                    const ws = wb.Sheets[wsName];
-                    const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-                    const findValue = (keywords) => {
-                        for (let row of rawData) {
-                            if (!row[0]) continue;
-                            const cellText = row[0].toString().toLowerCase();
-                            if (keywords.some(k => cellText.includes(k.toLowerCase()))) {
-                                for (let i = 1; i < row.length; i++) {
-                                    if (row[i] && !isNaN(parseFloat(row[i]))) {
-                                        return parseFloat(row[i]);
-                                    }
-                                }
-                            }
-                        }
-                        return null;
-                    };
-
-                    const newData = { ...dashboardData };
-                    
-                    // 1. Production & Metrics (Existing)
-                    const ctaVal = findValue(['CTA Production', 'CTA Actual']);
-                    if (ctaVal) newData.production[0].actual = ctaVal;
-                    const ptaVal = findValue(['PTA Production', 'PTA Actual']);
-                    if (ptaVal) newData.production[1].actual = ptaVal;
-                    const availVal = findValue(['Availability', 'Plant Availability']);
-                    if (availVal) newData.availability.actual = availVal;
-                    const powerVal = findValue(['Plant Power']);
-                    if (powerVal) newData.metrics.power[0].value = powerVal;
-                    const steamVal = findValue(['Steam to DHT']);
-                    if (steamVal) newData.metrics.steam[0].value = steamVal;
-                    const pxVal = findValue(['PX Rate']);
-                    if (pxVal) newData.metrics.flow[0].value = pxVal;
-
-                    // 2. HSSE Data (New)
-                    const alarmVal = findValue(['DCS Alarm']);
-                    if (alarmVal !== null) newData.hsse.alarms = alarmVal;
-                    const bypassVal = findValue(['Safety Bypass']);
-                    if (bypassVal !== null) newData.hsse.bypass = bypassVal;
-                    const limitVal = findValue(['Beyond Operating Limit', 'Operating Limit']);
-                    if (limitVal !== null) newData.hsse.limit = limitVal;
-
-                    // 3. Efficiency Data (New)
-                    const effPower = findValue(['Total Power']);
-                    if (effPower !== null) newData.efficiency.power.val = effPower;
-                    const effHac = findValue(['HAC Cons', 'HAC Cons.']);
-                    if (effHac !== null) newData.efficiency.hac.val = effHac;
-                    const effPx = findValue(['Excess PX']);
-                    if (effPx !== null) newData.efficiency.px.val = effPx;
-                    const effCat = findValue(['CMB Catalyst']);
-                    if (effCat !== null) newData.efficiency.catalyst.val = effCat;
-                    const effWwt = findValue(['WWT COD']);
-                    if (effWwt !== null) newData.efficiency.wwt.val = effWwt;
-                    const effWater = findValue(['Demin Water']);
-                    if (effWater !== null) newData.efficiency.water.val = effWater;
-
-                    // Save and Update
-                    setDashboardData(newData);
-                    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                    setLastUpdated(today);
-                    localStorage.setItem('rpcm_dashboard_data_v2', JSON.stringify(newData));
-                    alert("Dashboard updated successfully from Excel (including HSSE & Efficiency)!");
-                };
-                reader.readAsBinaryString(file);
-            };
-
-            const triggerUpload = () => {
-                fileInputRef.current.click();
-            };
-
-            return (
-                <div className="flex h-screen overflow-hidden bg-black">
-                    {/* Hidden File Input */}
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileUpload} 
-                        accept=".xlsx, .xls" 
-                        className="hidden" 
-                    />
-
-                    {/* Sidebar */}
-                    <aside className="hidden md:flex w-64 flex-col border-r border-gray-800 bg-gray-900">
-                        <div className="h-20 flex items-center px-6 border-b border-gray-800">
-                            <div className="flex items-center gap-3 text-plant-green font-bold text-xl tracking-wider">
-                                <RpcmLogo className="w-10 h-10" />
-                                <div className="flex flex-col">
-                                    <span>RPCM</span>
-                                    <span className="text-[10px] text-gray-400 font-normal tracking-normal leading-none">RP CHEMICALS</span>
-                                </div>
-                            </div>
-                        </div>
-                        <nav className="flex-1 p-4 space-y-2">
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 shadow-sm">
-                                <Icons.LayoutDashboard size={20} />
-                                <span className="font-medium">Overview</span>
-                            </a>
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
-                                <Icons.TrendingUp size={20} />
-                                <span className="font-medium">Hourly Trends</span>
-                            </a>
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
-                                <Icons.Calendar size={20} />
-                                <span className="font-medium">Reports</span>
-                            </a>
-                            <a href="#" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
-                                <Icons.Settings size={20} />
-                                <span className="font-medium">Settings</span>
-                            </a>
-                        </nav>
-                    </aside>
-
-                    {/* Main Content */}
-                    <main className="flex-1 flex flex-col overflow-hidden relative">
-                        
-                        {/* Header */}
-                        <header className="h-16 border-b border-gray-800 bg-gray-900/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-20">
-                            <div className="flex items-center gap-4">
-                                <button className="md:hidden text-gray-400" onClick={() => setSidebarOpen(!isSidebarOpen)}>
-                                    <Icons.Menu />
-                                </button>
-                                <div className="flex items-center gap-3">
-                                    <div className="md:hidden">
-                                        <RpcmLogo className="w-8 h-8 text-plant-green" />
-                                    </div>
-                                    <div>
-                                        <h1 className="text-lg font-semibold text-white">Plant Overview</h1>
-                                        <p className="text-xs text-gray-400">Report Date: {lastUpdated} | Day Shift</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                {/* Import Button */}
-                                <button 
-                                    onClick={triggerUpload}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-plant-blue hover:bg-blue-600 text-white rounded-md text-sm font-medium transition-colors"
-                                >
-                                    <Icons.Upload size={16} />
-                                    <span className="hidden sm:inline">Import Report</span>
-                                </button>
-                                <button className="p-2 text-gray-400 hover:text-white relative">
-                                    <Icons.Bell size={20} />
-                                    <span className="absolute top-2 right-2 w-2 h-2 bg-plant-red rounded-full border-2 border-gray-900"></span>
-                                </button>
-                            </div>
-                        </header>
-
-                        {/* Dashboard Content */}
-                        <div className="flex-1 overflow-y-auto p-6">
-                            <div className="max-w-7xl mx-auto space-y-8">
-
-                                {/* ROW 1: PRODUCTION SUMMARY */}
-                                <section>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Icons.Box size={20} className="text-white" />
-                                        <h2 className="text-lg font-bold text-white">Daily Production Report</h2>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {dashboardData.production.map(p => (
-                                            <ProductionCard key={p.id} {...p} />
-                                        ))}
-                                        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
-                                            <div>
-                                                <div className="text-gray-400 text-xs uppercase tracking-wider mb-1 font-medium">Plant Availability</div>
-                                                <div className="text-3xl font-bold text-white">{dashboardData.availability.actual}%</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-xs text-gray-500">Target: {dashboardData.availability.target}%</div>
-                                                <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2 overflow-hidden">
-                                                    <div className="h-full bg-plant-orange rounded-full" style={{width: '86%'}}></div>
-                                                </div>
-                                                <div className="text-xs text-orange-400 mt-1">Below Target</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                {/* ROW 2: REAL TIME GAUGES */}
-                                <section>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-1 h-6 bg-plant-blue rounded-full"></div>
-                                        <h2 className="text-lg font-bold text-white">Real-Time Monitoring</h2>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                                        {dashboardData.metrics.power.map(m => <Gauge key={m.id} {...m} color="text-plant-green" icon={Icons[m.icon]} />)}
-                                        {dashboardData.metrics.steam.map(m => <Gauge key={m.id} {...m} color="text-plant-orange" icon={Icons[m.icon]} />)}
-                                        {dashboardData.metrics.flow.map(m => <Gauge key={m.id} {...m} color="text-plant-blue" icon={Icons[m.icon]} />)}
-                                    </div>
-                                </section>
-
-                                {/* ROW 3: HOURLY TRENDS SECTION */}
-                                <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <Icons.TrendingUp className="text-plant-green" />
-                                            <h3 className="font-bold text-white">Hourly Trends (06:00 - 18:00)</h3>
-                                        </div>
-                                        {/* Tabs */}
-                                        <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
-                                            <button 
-                                                onClick={() => setTrendTab('power')}
-                                                className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'power' ? 'bg-plant-green text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                                            >Power (MW)</button>
-                                            <button 
-                                                onClick={() => setTrendTab('steam')}
-                                                className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'steam' ? 'bg-plant-orange text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                                            >Steam (TPH)</button>
-                                            <button 
-                                                onClick={() => setTrendTab('flow')}
-                                                className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${trendTab === 'flow' ? 'bg-plant-blue text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                                            >Flow (TPH)</button>
-                                        </div>
-                                    </div>
-                                    <div className="h-64 w-full">
-                                        {trendTab === 'power' && <TrendChart data={dashboardData.hourly} dataKey="power" color="#8cc63f" unit="MW" />}
-                                        {trendTab === 'steam' && <TrendChart data={dashboardData.hourly} dataKey="steam" color="#f59e0b" unit="TPH" />}
-                                        {trendTab === 'flow' && <TrendChart data={dashboardData.hourly} dataKey="flow" color="#3b82f6" unit="TPH" />}
-                                    </div>
-                                </section>
-
-                                {/* ROW 4: HSSE & EFFICIENCY SPLIT */}
-                                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    {/* HSSE KPI */}
-                                    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                                        <div className="flex items-center gap-2 mb-6 border-b border-gray-800 pb-4">
-                                            <Icons.ShieldAlert className="text-plant-red" />
-                                            <h3 className="font-bold text-white">HSSE KPI Tracking</h3>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-400 text-sm">DCS Alarm & Interlock</span>
-                                                <span className="text-green-400 font-mono font-bold">{dashboardData.hsse.alarms}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-400 text-sm">Safety Bypass</span>
-                                                <span className="text-orange-400 font-mono font-bold">{dashboardData.hsse.bypass}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-400 text-sm">Beyond Operating Limit</span>
-                                                <div className="text-right">
-                                                    <span className="text-red-400 font-mono font-bold">{dashboardData.hsse.limit}</span>
-                                                    <span className="text-xs text-gray-600 block">Today</span>
-                                                </div>
-                                            </div>
-                                            <div className="mt-4 pt-4 border-t border-gray-800">
-                                                <div className="text-xs text-gray-500 mb-2">Leaks Recorded</div>
-                                                <div className="grid grid-cols-4 gap-2 text-center">
-                                                    {['Toxic', 'HAC', 'Hot Oil', 'Gas'].map(type => (
-                                                        <div key={type} className="bg-gray-800 rounded p-2">
-                                                            <div className="text-green-400 font-bold text-sm">0</div>
-                                                            <div className="text-[10px] text-gray-500">{type}</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Consumption/Efficiency */}
-                                    <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6">
-                                        <div className="flex items-center gap-2 mb-6 border-b border-gray-800 pb-4">
-                                            <Icons.Activity className="text-plant-blue" />
-                                            <h3 className="font-bold text-white">Consumption Efficiency</h3>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-                                            <div>
-                                                <h4 className="text-xs text-gray-500 uppercase mb-3 font-semibold">Oxidation</h4>
-                                                <KpiRow label="Total Power" value={dashboardData.efficiency.power.val} target={dashboardData.efficiency.power.tgt} unit="kwh/t" inverse={true} />
-                                                <KpiRow label="HAC Cons." value={dashboardData.efficiency.hac.val} target={dashboardData.efficiency.hac.tgt} unit="kg/t" inverse={true} />
-                                                <KpiRow label="Excess PX" value={dashboardData.efficiency.px.val} target={dashboardData.efficiency.px.tgt} unit="kg/t" inverse={true} />
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xs text-gray-500 uppercase mb-3 font-semibold md:mt-0 mt-4">WWT & Utilities</h4>
-                                                <KpiRow label="CMB Catalyst" value={dashboardData.efficiency.catalyst.val} target={dashboardData.efficiency.catalyst.tgt} unit="kg/t" inverse={true} />
-                                                <KpiRow label="WWT COD" value={dashboardData.efficiency.wwt.val} target={dashboardData.efficiency.wwt.tgt} unit="ppm" inverse={true} />
-                                                <div className="py-3 flex justify-between items-center">
-                                                    <span className="text-sm text-gray-300">Demin Water ISBL</span>
-                                                    <span className="text-white font-mono font-bold">{dashboardData.efficiency.water.val} <span className="text-xs text-gray-500">m3</span></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </section>
-
-                            </div>
-                            
-                            <footer className="mt-12 text-center text-gray-600 text-sm pb-6">
-                                <p>RPCM Operations Dashboard • Data Source: {lastUpdated} Report</p>
-                            </footer>
-                        </div>
-
-                    </main>
+        <!-- FEAR & GREED + MARKET CAP -->
+        <div class="flex flex-col gap-6">
+            <!-- Live Fear & Greed -->
+            <div class="card flex flex-col items-center justify-center bg-slate-900 border-slate-700">
+                <div class="w-full flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-white">😨 Fear & Greed</h3>
+                    <span id="fng-value" class="text-xs font-bold bg-slate-700 text-slate-300 px-2 py-1 rounded animate-pulse">Loading...</span>
                 </div>
-            );
+                <img src="https://alternative.me/crypto/fear-and-greed-index.png" alt="Latest Crypto Fear & Greed Index" class="w-full rounded-lg shadow-lg">
+            </div>
+
+            <div class="card bg-slate-900 border-slate-700 flex-1">
+                 <div class="w-full flex justify-between items-center mb-2">
+                    <h3 class="font-bold text-white">📊 Market Cap</h3>
+                </div>
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+                    { "symbol": "CRYPTOCAP:TOTAL", "width": "100%", "height": "100%", "locale": "en", "dateRange": "1M", "colorTheme": "dark", "isTransparent": true, "autosize": true, "largeChartUrl": "" }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-12 border-t border-slate-800 pt-6 text-center">
+        <p class="text-slate-500 text-sm font-mono">
+            Tool built by <span class="text-blue-400 font-bold">ezham aka Am0x</span> 🚀
+        </p>
+    </footer>
+
+    <script>
+        // --- 0. HODL QUOTES ---
+        const quotes = [
+            "Time in the market beats timing the market.",
+            "Diamond hands are forged in the dip. 💎🙌",
+            "When in doubt, zoom out. 🔭",
+            "The stock market is a device for transferring money from the impatient to the patient. - Warren Buffett",
+            "HODL: Hold On for Dear Life. 🚀",
+            "Volatility is the price you pay for performance.",
+            "You only lose if you sell low.",
+            "Generational wealth requires generational patience.",
+            "Bear markets make you rich, bull markets make you money.",
+            "Stay humble, stack sats.",
+            "Buying the dip is easy. Holding the rally is hard."
+        ];
+
+        // --- 1. APP STATE & PERSISTENCE ---
+        let state = { btc: null, money: null, eth: null };
+
+        window.onload = function() {
+            const savedState = localStorage.getItem('marketDiagnosticState');
+            if (savedState) {
+                state = JSON.parse(savedState);
+                restoreUI();
+            }
+            const savedTarget = localStorage.getItem('btcTargetVal');
+            if(savedTarget) document.getElementById('btc-target').value = savedTarget;
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('motivation-quote').innerText = `"${randomQuote}"`;
+            loadWatchlist('sentiment', document.querySelector('.tab-btn'));
+            fetchFearGreed();
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<Dashboard />);
+        // --- 2. EXIT TRACKER LOGIC ---
+        function checkExitStatus() {
+            const current = parseFloat(document.getElementById('btc-current').value);
+            const target = parseFloat(document.getElementById('btc-target').value);
+            const msg = document.getElementById('exit-message');
+            const card = document.getElementById('btc-card');
+            if(!current || !target) return;
+            localStorage.setItem('btcTargetVal', target);
+            const distance = (current - target).toFixed(2);
+            if (current <= target) {
+                msg.innerHTML = "🚨 <span class='text-red-500 font-extrabold'>EXIT MARKET NOW!</span> 🚨";
+                card.classList.add('exit-alarm');
+            } else {
+                msg.innerHTML = `Distance to Target: <span class='text-blue-400'>${distance}%</span>`;
+                card.classList.remove('exit-alarm');
+            }
+        }
+
+        // --- 3. DIAGNOSTIC LOGIC ---
+        function setSignal(type, value) {
+            state[type] = value;
+            localStorage.setItem('marketDiagnosticState', JSON.stringify(state)); 
+            updateButtons(type, value);
+            calculateStatus();
+        }
+
+        function updateButtons(type, value) {
+            // Remove all actives
+            document.getElementById(`btn-${type}-buy`).classList.remove('active-buy');
+            document.getElementById(`btn-${type}-sell`).classList.remove('active-sell');
+            document.getElementById(`btn-${type}-neutral`).classList.remove('active-neutral');
+            
+            // Add correct active
+            if(value === 'bull') document.getElementById(`btn-${type}-buy`).classList.add('active-buy');
+            if(value === 'bear') document.getElementById(`btn-${type}-sell`).classList.add('active-sell');
+            if(value === 'neutral') document.getElementById(`btn-${type}-neutral`).classList.add('active-neutral');
+        }
+
+        function restoreUI() {
+            if(state.btc) updateButtons('btc', state.btc);
+            if(state.money) updateButtons('money', state.money);
+            if(state.eth) updateButtons('eth', state.eth);
+            calculateStatus();
+        }
+
+        function calculateStatus() {
+            const resultCard = document.getElementById('result-card');
+            const title = document.getElementById('status-title');
+            const desc = document.getElementById('status-desc');
+            resultCard.className = "card status-output flex flex-col justify-center p-6"; 
+
+            if (!state.btc || !state.money || !state.eth) return; 
+
+            if (state.btc === 'bull') {
+                title.innerText = "BITCOIN SEASON 🐻";
+                title.className = "text-3xl font-extrabold text-orange-500 mb-2";
+                desc.innerText = "Dominance is rising. Alts will likely bleed or stall.";
+                resultCard.classList.add('phase-btc');
+                setConfidence(90, 'bg-orange-500');
+                return;
+            }
+            if (state.btc === 'bear' && state.money === 'bear') {
+                title.innerText = "MARKET CHOP 🦀";
+                title.className = "text-3xl font-extrabold text-slate-400 mb-2";
+                desc.innerText = "Bitcoin weak + Money leaving. Risk Off.";
+                setConfidence(50, 'bg-slate-500');
+                return;
+            }
+            if (state.btc === 'bear' && state.money === 'bull' && state.eth === 'bear') {
+                title.innerText = "ACCUMULATION 🏗️";
+                title.className = "text-3xl font-extrabold text-blue-400 mb-2";
+                desc.innerText = "Money entering, but rotation is weak. Pre-pump.";
+                resultCard.classList.add('phase-acc');
+                setConfidence(75, 'bg-blue-500');
+                return;
+            }
+            if (state.btc === 'bear' && state.money === 'bull' && state.eth === 'bull') {
+                title.innerText = "ALTSEASON IS GO 🚀";
+                title.className = "text-3xl font-extrabold text-green-400 mb-2 animate-pulse";
+                desc.innerText = "Dominance Falling + Money In + Rotation Active.";
+                resultCard.classList.add('phase-alt');
+                setConfidence(100, 'bg-green-500');
+                return;
+            }
+            // Fallback for Neutral
+            title.innerText = "OBSERVING 👀";
+            title.className = "text-3xl font-extrabold text-slate-500 mb-2";
+            desc.innerText = "Signals are mixed. Wait for clarity.";
+            setConfidence(50, 'bg-slate-500');
+        }
+
+        function setConfidence(percent, colorClass) {
+            document.getElementById('confidence-bar').className = `h-full w-0 ${colorClass} transition-all duration-500`;
+            setTimeout(() => { document.getElementById('confidence-bar').style.width = percent + "%"; }, 100);
+            document.getElementById('confidence-score').innerText = percent + "%";
+        }
+
+        function resetDiagnostic() {
+            state = { btc: null, money: null, eth: null };
+            localStorage.removeItem('marketDiagnosticState');
+            document.querySelectorAll('.diag-btn').forEach(btn => {
+                btn.classList.remove('active-buy', 'active-sell', 'active-neutral');
+            });
+            document.getElementById('status-title').innerText = "WAITING...";
+            document.getElementById('status-title').className = "text-3xl font-extrabold text-slate-600 mb-2";
+            document.getElementById('status-desc').innerText = "Match the buttons to the gauges to calculate the market phase.";
+            document.getElementById('confidence-bar').style.width = "0%";
+        }
+
+        // --- 3. WATCHLIST SWITCHER ---
+        const watchlists = {
+            sentiment: [
+                { "s": "BINANCE:XRPUSDT", "d": "1. XRP (Breakout)" },
+                { "s": "BINANCE:SUIUSDT", "d": "2. SUI (Momentum)" },
+                { "s": "BINANCE:DOGEUSDT", "d": "3. DOGE (Meme)" },
+                { "s": "BINANCE:FETUSDT", "d": "4. FET (AI)" },
+                { "s": "BINANCE:RENDERUSDT", "d": "5. RENDER (DePin)" }
+            ],
+            memes: [
+                { "s": "BINANCE:DOGEUSDT", "d": "DOGE" },
+                { "s": "BINANCE:PEPEUSDT", "d": "PEPE" },
+                { "s": "BINANCE:WIFUSDT", "d": "WIF" },
+                { "s": "BINANCE:FLOKIUSDT", "d": "FLOKI" },
+                { "s": "BINANCE:BONKUSDT", "d": "BONK" }
+            ],
+            ai: [
+                { "s": "BINANCE:FETUSDT", "d": "FET" },
+                { "s": "BINANCE:RENDERUSDT", "d": "RENDER" },
+                { "s": "BINANCE:TAOUSDT", "d": "TAO" },
+                { "s": "BINANCE:NEARUSDT", "d": "NEAR" },
+                { "s": "BINANCE:GRTUSDT", "d": "GRT" }
+            ],
+            gaming: [
+                { "s": "BINANCE:IMXUSDT", "d": "IMX" },
+                { "s": "BINANCE:BEAMXUSDT", "d": "BEAM" },
+                { "s": "BINANCE:GALAUSDT", "d": "GALA" },
+                { "s": "BINANCE:SANDUSDT", "d": "SAND" },
+                { "s": "BINANCE:AXSUSDT", "d": "AXS" }
+            ]
+        };
+
+        function loadWatchlist(key, btnElement) {
+            document.getElementById('list-title').innerText = "🔥 " + key.charAt(0).toUpperCase() + key.slice(1) + " Leaders";
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
+            if(btnElement) btnElement.classList.add('active-tab');
+            const container = document.getElementById('watchlist-container');
+            container.innerHTML = ''; 
+            const div = document.createElement('div');
+            div.className = 'tradingview-widget-container';
+            div.innerHTML = `<div class="tradingview-widget-container__widget"></div>`;
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
+            script.async = true;
+            script.innerHTML = JSON.stringify({
+                "colorTheme": "dark", "dateRange": "12M", "showChart": true, "locale": "en",
+                "largeChartUrl": "", "isTransparent": true, "showSymbolLogo": true,
+                "width": "100%", "height": "100%", 
+                "tabs": [ { "title": "List", "symbols": watchlists[key] } ]
+            });
+            div.appendChild(script);
+            container.appendChild(div);
+        }
+
+        async function fetchFearGreed() {
+            try {
+                const res = await fetch('https://api.alternative.me/fng/');
+                const data = await res.json();
+                const val = data.data[0].value;
+                const text = data.data[0].value_classification;
+                const el = document.getElementById('fng-value');
+                el.innerText = `${text}: ${val}`;
+                el.classList.remove('animate-pulse');
+                if(val < 25) { el.className = "text-xs font-bold bg-red-900 text-red-200 px-2 py-1 rounded"; }
+                else if(val > 75) { el.className = "text-xs font-bold bg-green-900 text-green-200 px-2 py-1 rounded"; }
+                else { el.className = "text-xs font-bold bg-slate-700 text-slate-300 px-2 py-1 rounded"; }
+            } catch(e) {
+                console.log("F&G API Error");
+                document.getElementById('fng-value').innerText = "API Error";
+            }
+        }
     </script>
 </body>
 </html>
